@@ -1,6 +1,6 @@
 {
   "name": "pg-client-helper",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Postgres Client Helper providing named param objects, connection pooling",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -11,7 +11,7 @@
   },
   "author": "MK2k",
   "license": "ISC",
-  "peerDependencies": {
+  "Dependencies": {
     "@aws-sdk/rds-signer": "3.409.0",
     "pg": "8.11.3"
   },
