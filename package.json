@@ -9,7 +9,7 @@
     "build": "tsc",
     "destroy": "npx rimraf dist"
   },
-  "author": "",
+  "author": "MK2k",
   "license": "ISC",
   "peerDependencies": {
     "@aws-sdk/rds-signer": "3.409.0",
@@ -22,5 +22,17 @@
     "jest": "29.6.4",
     "ts-jest": "29.1.1",
     "typescript": "5.2.2"
-  }
+  },
+  "directories": {
+    "lib": "lib",
+    "test": "tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/theMK2k/pg-client-helper.git"
+  },
+  "bugs": {
+    "url": "https://github.com/theMK2k/pg-client-helper/issues"
+  },
+  "homepage": "https://github.com/theMK2k/pg-client-helper#readme"
 }
