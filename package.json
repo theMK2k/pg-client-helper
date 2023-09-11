@@ -1,0 +1,26 @@
+{
+  "name": "pg-client-helper",
+  "version": "1.0.0",
+  "description": "Postgres Client Helper providing named param objects, connection pooling",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "test": "npx jest --coverage",
+    "build": "tsc",
+    "destroy": "npx rimraf dist"
+  },
+  "author": "",
+  "license": "ISC",
+  "peerDependencies": {
+    "@aws-sdk/rds-signer": "3.409.0",
+    "pg": "8.11.3"
+  },
+  "devDependencies": {
+    "@types/jest": "29.5.4",
+    "@types/node": "20.6.0",
+    "@types/pg": "8.10.2",
+    "jest": "29.6.4",
+    "ts-jest": "29.1.1",
+    "typescript": "5.2.2"
+  }
+}

@@ -1,0 +1,143 @@
+# pg-client-helper
+
+A Postgres `pg` client based helper which:
+
+- provides async query functions explicitly returning multiple rows, a single row, a scalar value or nothing
+- allows you to write SQL queries with named parameters (instead of positional parameters)
+- handles your connections
+
+## Query Functions
+
+**pg-client-helper** provides the following async query functions:
+
+| Function Name     | Description                                | Suitable for                                               |
+| ----------------- | ------------------------------------------ | ---------------------------------------------------------- |
+| **queryMultiple** | _returns an array of rows_                 | `SELECT * FROM public.users`                               |
+| **querySingle**   | _returns the first row as an object_       | `SElECT * FROM public.users WHERE id_users = 1337`         |
+| **queryScalar**   | _returns the first value of the first row_ | `SELECT user_name FROM public.users WHERE id_users = 1337` |
+| **query**         | _return null_                              | `DELETE FROM public.users WHERE id_users = 1337`           |
+
+## Named Parameters
+
+### You can provide named parameters in your `query` and the `params` object. These parameters must start with a Dollar sign (`$`).
+
+**Example**:
+
+```js
+import * as PG from "pg-client-helper";
+
+const query = `
+    INSERT INTO public.users (
+        user_name
+        , email_address
+        , active
+    )
+    VALUES (
+        $user_name
+        , $email_address
+        , $active
+    )`;
+
+const params = {
+  $user_name: "John Doe",
+  $email_address: "john_doe@some.tld",
+  $active: true,
+};
+
+PG.query(query, params);
+```
+
+<details><summary>Inner workings:</summary>
+
+**pg-client-helper**
+
+- takes your params object
+- iterates through all properties sorted descending by the length of their names
+- builds up the params array as expected by the `pg` client
+- replaces all occurences of the property name with the index expected by the `pg` client
+
+So ultimately the query run with `pg` will be:
+
+```js
+pg.query(
+  `    INSERT INTO public.users (
+        user_name
+        , email_address
+        , active
+    )
+    VALUES (
+        $2
+        , $1
+        , $3
+    )`,
+  ["john_doe@some.tld", "John Doe", true]
+);
+```
+
+</details>
+
+### If an attribute of your params object is an **Array**, **pg-client-helper** will spread the content of the array into the parameter list.
+
+**Example**:
+
+```js
+import * as PG from "pg-client-helper";
+
+const query = `SELECT * FROM public.users WHERE id_users IN ($id_users)`;
+
+const params = {
+  $id_users = [13, 666, 1337]
+};
+
+PG.queryMultiple(query, params);
+```
+
+<details><summary>Inner workings:</summary>
+
+**pg-client-helper** spreads the content of the $id_users array into the parameter list.
+
+So ultimately the query run with `pg` will be:
+
+```js
+pg.query(
+  `SELECT * FROM public.users WHERE id_users IN ($1, $2, $3)`,
+  [13, 666, 1337]
+);
+```
+
+</details>
+
+### pg-client-helper is backwards compatible to the default `pg` parameter list:
+
+```js
+import * as PG from "pg-client-helper";
+
+const query = `
+    INSERT INTO public.users (
+        user_name
+        , email_address
+        , active
+    )
+    VALUES (
+        $1
+        , $2
+        , $3
+    )`;
+
+PG.query(query, ["John Doe", "john_doe@some.tld", true]);
+```
+
+## Connection Handling
+
+**pg-client-helper** manages your database connection by utilizing connection pooling. It also supports connections to AWS RDS via IAM using AWS Signer.
+
+| Environment Variable    | Description                                                                                                                                                                                                                  |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PGHOST                  | **(Mandatory)** The hostname of your PostgreSQL server. This could be a local hostname, IP address, or a remote server address.                                                                                              |
+| PGPORT                  | **(Mandatory)** The port number on which your PostgreSQL server is running. The default PostgreSQL port is `5432`.                                                                                                           |
+| PGUSER                  | **(Mandatory)** The username you wish to authenticate with when connecting to your PostgreSQL server.                                                                                                                        |
+| PGDATABASE              | **(Mandatory)** The name of the database you want to connect to on your PostgreSQL server.                                                                                                                                   |
+| PGPASSWORD              | **(Optional)** The password associated with the provided `PGUSER`. If using `PG_USE_AWS_RDS_SIGNER` (see below), this is replaced by the IAM authentication.                                                                 |
+| PG_SSL_REQUIRED         | **(Optional)** If set to `true`, SSL will be required for connections. This helps ensure encrypted connections for added security.                                                                                           |
+| PG_SSL_ALLOW_SELFSIGNED | **(Optional)** If set to `true`, self-signed SSL certificates will be allowed, which can be useful in development or internal network scenarios. It's generally recommended to use certified SSL certificates in production. |
+| PG_USE_AWS_RDS_SIGNER   | **(Optional)** If set to `true`, the module will use AWS RDS Signer for IAM-based authentication to your RDS database. This means `PGPASSWORD` is not required as authentication is handled by the IAM role.                 |
