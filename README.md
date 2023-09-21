@@ -6,6 +6,16 @@ A Postgres `pg` client based helper which:
 - allows you to write SQL queries with named parameters (instead of positional parameters)
 - handles your connections
 
+## Logging
+
+**pg-client-helper** logs out certain events. To control the level use the **PG_CLIENT_HELPER_LOGLEVEL** environment variable. Valid values are:
+
+- `DEBUG`
+- `INFO`
+- `WARN`
+- `ERROR`
+- `SILENT` (default)
+
 ## Query Functions
 
 **pg-client-helper** provides the following async query functions:

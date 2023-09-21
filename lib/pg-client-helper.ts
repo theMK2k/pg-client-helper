@@ -1,5 +1,5 @@
 /*
-PG Client Helper v1.0.0
+PG Client Helper
 
 Copyright (c) 2023, Jörg 'MK2k' Sonntag, Steffen Stolze
 
@@ -10,7 +10,53 @@ import { Pool } from "pg";
 import { Signer } from "@aws-sdk/rds-signer";
 import { readFileSync } from "fs";
 
-console.log("[PG] Creating connection pool");
+export const logger = (function () {
+  function logLevel() {
+    return process.env.PG_CLIENT_HELPER_LOGLEVEL == "DEBUG"
+      ? 1
+      : process.env.PG_CLIENT_HELPER_LOGLEVEL == "INFO"
+      ? 2
+      : process.env.PG_CLIENT_HELPER_LOGLEVEL == "WARN"
+      ? 3
+      : process.env.PG_CLIENT_HELPER_LOGLEVEL == "ERROR"
+      ? 4
+      : process.env.PG_CLIENT_HELPER_LOGLEVEL == "SILENT"
+      ? 5
+      : 5;
+  }
+
+  const methods = {
+    log: console.log,
+    info: console.info,
+    warn: console.warn,
+    error: console.error,
+  };
+
+  return {
+    log: (...args: any) => {
+      if (logLevel() <= 1) {
+        console.log(...args);
+      }
+    },
+    info: (...args: any) => {
+      if (logLevel() <= 2) {
+        console.info(...args);
+      }
+    },
+    warn: (...args: any) => {
+      if (logLevel() <= 3) {
+        console.warn(...args);
+      }
+    },
+    error: (...args: any) => {
+      if (logLevel() <= 4) {
+        console.error(...args);
+      }
+    },
+  };
+})();
+
+logger.info("[PG] Creating connection pool");
 
 /**
  * PG CONNECTION POOL
@@ -40,7 +86,7 @@ export function initPool(): Pool {
 
   if (isTrue(process.env.PG_USE_AWS_RDS_SIGNER)) {
     // we want to use a signer and provide its function as the password
-    console.log("[RDS SIGNER] providing function as password");
+    logger.log("[RDS SIGNER] providing function as password");
 
     try {
       ca = readFileSync("./rds-combined-ca-bundle.pem").toString(); // this cert is being downloaded in Dockerfile during docker build
@@ -51,7 +97,7 @@ export function initPool(): Pool {
     }
 
     const getAuthToken = async () => {
-      console.log("[RDS SIGNER] START - getting auth token");
+      logger.log("[RDS SIGNER] START - getting auth token");
       const signer = new Signer({
         hostname: process.env.PGHOST!,
         port: +process.env.PGPORT!,
@@ -175,17 +221,20 @@ export async function queryMultiple(
   queryParams?: Object | Array<any>
 ) {
   let client: any = null;
+  let transformedQueryAndParams = null;
   try {
     client = await pool.connect();
 
-    const transformedQueryAndParams = transformQuery(query, queryParams);
+    transformedQueryAndParams = transformQuery(query, queryParams);
 
-    console.log({ transformedQueryAndParams });
+    logger.log({ transformedQueryAndParams });
 
     const rows = (await client.query(...transformedQueryAndParams)).rows;
 
     return rows;
   } catch (error) {
+    logger.error(`[PG] Error in query:`, error);
+    logger.error('[PG] Transformed query and params were:', transformedQueryAndParams);
     throw error;
   } finally {
     if (client) {
@@ -202,7 +251,6 @@ export async function querySingle(
   query: string,
   queryParams?: Object | Array<any>
 ) {
-  // console.log('QUERY SINGLE', query, queryParams);
   const rows = await queryMultiple(query, queryParams);
   return rows[0];
 }

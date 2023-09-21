@@ -1,13 +1,14 @@
 {
   "name": "pg-client-helper",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "description": "Postgres Client Helper providing named param objects, connection pooling",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "test": "npx jest --coverage",
     "build": "tsc",
-    "destroy": "npx rimraf dist"
+    "destroy-dist": "npx rimraf dist",
+    "deploy-npm": "npm run destroy-dist && npm run test && npm run build && npm publish"
   },
   "author": "MK2k",
   "license": "ISC",
