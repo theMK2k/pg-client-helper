@@ -5,6 +5,7 @@ A Postgres `pg` client based helper which:
 - provides async query functions explicitly returning multiple rows, a single row, a scalar value or nothing
 - allows you to write SQL queries with named parameters (instead of positional parameters)
 - handles your connections
+- supports transactions (since v1.1.0)
 
 ## Logging
 
@@ -140,6 +141,41 @@ PG.query(query, ["John Doe", "john_doe@some.tld", true]);
 ## Connection Handling
 
 **pg-client-helper** manages your database connection by utilizing connection pooling. It also supports connections to AWS RDS via IAM using AWS Signer.
+
+If you want to use transactions, please use the following approach:
+
+```ts
+import * as PG from "pg-client-helper";
+
+async function myfunc() {
+  const client: any = PG.beginTransaction();  // begins the transaction and returns a client to be used for ALL 
+
+  try {
+    // 1st query
+    const $id_mytable1 = await PG.query(
+      `INSERT INTO mytable1 (val1) VALUES 'foo' RETURNING id_mytable1`
+    );
+
+    // 2nd query
+    const $id_mytable2 = await PG.query(
+      `INSERT INTO mytable2 (id_mytable1, val2) VALUES ($id_mytable1, 'bar')`,
+      { $id_mytable1 }
+    );
+
+    // 3rd query
+    await PG.query(
+      `UPDATE mytable3 SET val3 = 'baz' WHERE id_mytable1 = $id_mytable1 AND id_mytable2 = $id_mytable2`,
+      { $id_mytable1, $id_mytable2 }
+    );
+
+    await PG.commitTransaction(client); // commits all changes made since beginTransaction
+  } catch (error) {
+    if (client) {
+      await PG.rollbackTransaction(client); // we faced an error after beginTransaction, roll back all changes since then
+    }
+  }
+}
+```
 
 | Environment Variable    | Description                                                                                                                                                                                                                  |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

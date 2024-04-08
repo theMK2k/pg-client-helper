@@ -1,7 +1,7 @@
 /*
 PG Client Helper
 
-Copyright (c) 2023, Jörg 'MK2k' Sonntag, Steffen Stolze
+Copyright (c) 2023-2024, Jörg 'MK2k' Sonntag, Steffen Stolze
 
 Internet Consortium License (ISC)
 */
@@ -151,6 +151,34 @@ function isTrue(value: any) {
 }
 
 /**
+ * Begin a transaction by creating a client from the pool and starting a transaction
+ * @returns client - the client to use for further queries in the transaction
+ */
+export async function beginTransaction() {
+  const client = await pool.connect();
+  await client.query("BEGIN");
+  return client;
+}
+
+/**
+ * Commit a transaction and release the client back to the pool (DO NOT use the client after calling this function!)
+ * @param client
+ */
+export async function commitTransaction(client: any) {
+  await client.query("COMMIT");
+  client.release();
+}
+
+/**
+ * Roll back a transaction and release the client back to the pool (DO NOT use the client after calling this function!)
+ * @param client
+ */
+export async function rollbackTransaction(client: any) {
+  await client.query("ROLLBACK");
+  client.release();
+}
+
+/**
  * Transform query and query params from Object to Array
  *
  * If query params are already an array, return the query and params as-is
@@ -216,15 +244,34 @@ export function transformQuery(
   return [out_query, out_parameters];
 }
 
+/**
+ * Query the database and return multiple rows, e.g. "SELECT * FROM mytable WHERE some_field = $some_field"
+ * @param query the query to execute
+ * @param queryParams (optional) - pass an object with named parameters to replace in the query, prefix the named parameter with a dollar sign '$'
+ * @param client (optional) - pass an existing client (e.g. during a transaction) to use it instead of creating a new one
+ * @returns Array<any> - an array of rows
+ */
 export async function queryMultiple(
   query: string,
-  queryParams?: Object | Array<any>
+  queryParams?: Object | Array<any>,
+  client?: any
 ) {
-  let client: any = null;
-  let transformedQueryAndParams = null;
-  try {
-    client = await pool.connect();
+  let isClientCreatedHere = false;
 
+  if (!client) {
+    isClientCreatedHere = true;
+
+    try {
+      client = await pool.connect();
+    } catch (error) {
+      logger.error(`[PG] Error while creating client from pool:`, error);
+      throw error;
+    }
+  }
+
+  let transformedQueryAndParams = null;
+
+  try {
     transformedQueryAndParams = transformQuery(query, queryParams);
 
     logger.log({ transformedQueryAndParams });
@@ -234,32 +281,61 @@ export async function queryMultiple(
     return rows;
   } catch (error) {
     logger.error(`[PG] Error in query:`, error);
-    logger.error('[PG] Transformed query and params were:', transformedQueryAndParams);
+    logger.error(
+      "[PG] Transformed query and params were:",
+      transformedQueryAndParams
+    );
     throw error;
   } finally {
-    if (client) {
+    if (isClientCreatedHere && client) {
       client.release();
     }
   }
 }
 
-export async function query(query: string, queryParams?: Object | Array<any>) {
-  await queryMultiple(query, queryParams);
+/**
+ * Run a query without returning any result, e.g. "INSERT INTO mytable (id, name) VALUES ($id, $name)"
+ * @param query the query to execute
+ * @param queryParams (optional) - pass an object with named parameters to replace in the query, prefix the named parameter with a dollar sign '$'
+ * @param client (optional) - pass an existing client (e.g. during a transaction) to use it instead of creating a new one
+ */
+export async function query(
+  query: string,
+  queryParams?: Object | Array<any>,
+  client?: any
+) {
+  await queryMultiple(query, queryParams, client);
 }
 
+/**
+ * Query the database and return a single row value, e.g. "SELECT * FROM mytable WHERE id = $id" returns the row with the given id
+ * @param query the query to execute
+ * @param queryParams (optional) - pass an object with named parameters to replace in the query, prefix the named parameter with a dollar sign '$'
+ * @param client (optional) - pass an existing client (e.g. during a transaction) to use it instead of creating a new one
+ * @returns
+ */
 export async function querySingle(
   query: string,
-  queryParams?: Object | Array<any>
+  queryParams?: Object | Array<any>,
+  client?: any
 ) {
-  const rows = await queryMultiple(query, queryParams);
+  const rows = await queryMultiple(query, queryParams, client);
   return rows[0];
 }
 
+/**
+ * Query the database and return a single scalar value, e.g. "SELECT COUNT(*) FROM mytable" returns the number of rows in the table as a number
+ * @param query the query to execute
+ * @param queryParams (optional) - pass an object with named parameters to replace in the query, prefix the named parameter with a dollar sign '$'
+ * @param client (optional) - pass an existing client (e.g. during a transaction) to use it instead of creating a new one
+ * @returns
+ */
 export async function queryScalar(
   query: string,
-  queryParams?: Object | Array<any>
+  queryParams?: Object | Array<any>,
+  client?: any
 ) {
-  const row = await querySingle(query, queryParams);
+  const row = await querySingle(query, queryParams, client);
   if (!row) {
     return null;
   }
