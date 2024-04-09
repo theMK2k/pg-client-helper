@@ -148,7 +148,8 @@ If you want to use transactions, please use the following approach:
 import * as PG from "pg-client-helper";
 
 async function myfunc() {
-  const client: any = PG.beginTransaction(); // begins the transaction and returns a client to be used for ALL
+  // begin the transaction and get a client returned which must be used for ALL subsequent queries
+  const client: any = PG.beginTransaction();
 
   try {
     // 1st query
