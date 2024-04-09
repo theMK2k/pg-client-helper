@@ -55,7 +55,7 @@ const params = {
   $active: true,
 };
 
-PG.query(query, params);
+await PG.query(query, params);
 ```
 
 <details><summary>Inner workings:</summary>
@@ -70,7 +70,7 @@ PG.query(query, params);
 So ultimately the query run with `pg` will be:
 
 ```js
-pg.query(
+await pg.query(
   `    INSERT INTO public.users (
         user_name
         , email_address
@@ -100,7 +100,7 @@ const params = {
   $id_users = [13, 666, 1337]
 };
 
-PG.queryMultiple(query, params);
+await PG.queryMultiple(query, params);
 ```
 
 <details><summary>Inner workings:</summary>
@@ -110,7 +110,7 @@ PG.queryMultiple(query, params);
 So ultimately the query run with `pg` will be:
 
 ```js
-pg.query(
+await pg.query(
   `SELECT * FROM public.users WHERE id_users IN ($1, $2, $3)`,
   [13, 666, 1337]
 );
@@ -135,7 +135,7 @@ const query = `
         , $3
     )`;
 
-PG.query(query, ["John Doe", "john_doe@some.tld", true]);
+await PG.query(query, ["John Doe", "john_doe@some.tld", true]);
 ```
 
 ## Connection Handling
