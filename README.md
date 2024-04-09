@@ -149,7 +149,7 @@ import * as PG from "pg-client-helper";
 
 async function myfunc() {
   // begin the transaction and get a client returned which must be used for ALL subsequent queries
-  const client: any = PG.beginTransaction();
+  const client: any = await PG.beginTransaction();
 
   try {
     // 1st query
