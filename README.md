@@ -24,6 +24,7 @@ A Postgres `pg` client based helper which:
 | Function Name     | Description                                | Suitable for                                               |
 | ----------------- | ------------------------------------------ | ---------------------------------------------------------- |
 | **queryMultiple** | _returns an array of rows_                 | `SELECT * FROM public.users`                               |
+| **queryMultipleScalar** | _returns an array of values (the first value of each row)_                 | `SELECT user_name FROM public.users`                               |
 | **querySingle**   | _returns the first row as an object_       | `SElECT * FROM public.users WHERE id_users = 1337`         |
 | **queryScalar**   | _returns the first value of the first row_ | `SELECT user_name FROM public.users WHERE id_users = 1337` |
 | **query**         | _return null_                              | `DELETE FROM public.users WHERE id_users = 1337`           |
