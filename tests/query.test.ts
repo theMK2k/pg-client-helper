@@ -75,4 +75,15 @@ describe("pg-client-helper functions", () => {
 
     expect(result).toEqual(mockRows[0].name);
   });
+
+  it("queryMultipleScalar should return an array of all the first values", async () => {
+    const mockQuery = "SELECT name FROM users";
+    const mockRows = [{ name: "John" }, { name: "Jane" }];
+
+    mockClient.query.mockResolvedValueOnce({ rows: mockRows });
+
+    const result = await PG.queryMultipleScalar(mockQuery);
+
+    expect(result).toEqual(mockRows.map((row) => row.name));
+  });
 });

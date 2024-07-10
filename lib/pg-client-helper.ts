@@ -342,6 +342,27 @@ export async function queryScalar(
   return row[Object.keys(row)[0]];
 }
 
+/**
+ * Query the database and return an array of scalar values, e.g. "SELECT one_column FROM mytable" returns the values of one_column as an array
+ * @param query the query to execute
+ * @param queryParams (optional) - pass an object with named parameters to replace in the query, prefix the named parameter with a dollar sign '$'
+ * @param client (optional) - pass an existing client (e.g. during a transaction) to use it instead of creating a new one
+ * @returns
+ */
+export async function queryMultipleScalar(
+  query: string,
+  queryParams?: Object | Array<any>,
+  client?: any
+) {
+  const rows = await queryMultiple(query, queryParams, client);
+
+  if (!rows) {
+    return null;
+  }
+
+  return rows.map((row: any) => row[Object.keys(row)[0]]);
+}
+
 /*
 export default {
     queryMultiple,
