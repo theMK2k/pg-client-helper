@@ -118,6 +118,10 @@ export function initPool(): Pool {
     }
   }
 
+  const pgPoolSize = process.env.PGPOOLSIZE ? +process.env.PGPOOLSIZE : 10;
+
+  logger.info("[PG] Using Pool Size of", pgPoolSize);
+
   const pgPoolOptions: any = {
     host: process.env.PGHOST,
     port: +process.env.PGPORT!,
@@ -125,6 +129,7 @@ export function initPool(): Pool {
     password,
     database: process.env.PGDATABASE,
     ssl,
+    max: pgPoolSize,
   };
 
   const pool: any = new Pool(pgPoolOptions);
