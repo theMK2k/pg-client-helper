@@ -1,7 +1,7 @@
 /*
 PG Client Helper
 
-Copyright (c) 2023-2024, Jörg 'MK2k' Sonntag, Steffen Stolze
+Copyright (c) 2023-2025, Jörg 'MK2k' Sonntag, Steffen Stolze
 
 Internet Consortium License (ISC)
 */
